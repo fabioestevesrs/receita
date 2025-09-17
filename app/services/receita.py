@@ -36,25 +36,34 @@ class Receita:
 
                 # Enviar button click
                 await page.click('input[name="Enviar"]')
-
-                # wait load the result
-                await page.wait_for_selector('.clConteudoDados')
-
-                data_result = []
-                data_content = await page.locator('.clConteudoDados').all_text_contents()
-                data_result.extend([d.strip() for d in data_content])
-
-                data_comp = await page.locator('.clConteudoComp').all_text_contents()
-                data_result.extend([d.strip() for d in data_comp])
-
-                # remove last 3 itens from array
-                data_result = data_result[:-3]
-
+                
                 dict = {}
-                for item in data_result:
-                    if ": " in item:
-                        key, val = item.split(": ", 1)
-                        dict[key] = val
+                
+                try:
+                    # wait load the result
+                    await page.wait_for_selector('.clConteudoDados')
+
+                    data_result = []
+                    data_content = await page.locator('.clConteudoDados').all_text_contents()
+                    data_result.extend([d.strip() for d in data_content])
+
+                    data_comp = await page.locator('.clConteudoComp').all_text_contents()
+                    data_result.extend([d.strip() for d in data_comp])
+
+                    # remove last 3 itens from array
+                    data_result = data_result[:-3]
+                    
+                    for item in data_result:
+                        if ": " in item:
+                            key, val = item.split(": ", 1)
+                            dict[key] = val
+                except:
+                    await page.wait_for_selector('.clConteudoCompBold', timeout=5000)
+
+                    data_comp = await page.locator('.clConteudoCompBold').all_text_contents()
+                    
+                    if all(any(s in texto for texto in data_comp) for s in ['Data de nascimento informada', 'está divergente da constante na base de dados da Secretaria da Receita Federal do Brasil']):
+                        dict['erro'] = 'Data de nascimento divergente.'
 
                 return dict
             except Exception as e:
