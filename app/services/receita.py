@@ -5,6 +5,7 @@ from playwright.async_api import async_playwright
 
 settings = Settings()
 
+
 class Receita:
     def __init__(self, cpf: str, nasc: str):
         self.cpf = cpf
@@ -18,14 +19,15 @@ class Receita:
 
             try:
                 await page.goto(settings.url_cpf)
-                
+
                 # fill CPF
                 await page.fill('input[name="txtCPF"]', str(self.cpf))
                 # fill Data de Nascimento
                 await page.fill('input[name="txtDataNascimento"]', str(self.nasc))
 
                 # get and change to iframe from hCaptcha
-                frame = page.frame_locator('iframe[title="Widget contendo caixa de seleção para desafio de segurança hCaptcha"]')
+                frame = page.frame_locator(
+                    'iframe[title="Widget contendo caixa de seleção para desafio de segurança hCaptcha"]')
 
                 # wait checkbox show and click
                 await frame.locator('#checkbox').wait_for(timeout=10000)
@@ -36,9 +38,9 @@ class Receita:
 
                 # Enviar button click
                 await page.click('input[name="Enviar"]')
-                
+
                 dict = {}
-                
+
                 try:
                     # wait load the result
                     await page.wait_for_selector('.clConteudoDados')
@@ -52,7 +54,7 @@ class Receita:
 
                     # remove last 3 itens from array
                     data_result = data_result[:-3]
-                    
+
                     for item in data_result:
                         if ": " in item:
                             key, val = item.split(": ", 1)
@@ -61,13 +63,12 @@ class Receita:
                     await page.wait_for_selector('.clConteudoCompBold', timeout=5000)
 
                     data_comp = await page.locator('.clConteudoCompBold').all_text_contents()
-                    
+
                     if all(any(s in texto for texto in data_comp) for s in ['Data de nascimento informada', 'está divergente da constante na base de dados da Secretaria da Receita Federal do Brasil']):
-                        dict['erro'] = 'Data de nascimento divergente.'
+                        dict['error'] = 'Data de nascimento divergente.'
 
                 return dict
             except Exception as e:
                 raise RuntimeError(f"Error to query: {e}")
             finally:
                 await browser.close()
-
